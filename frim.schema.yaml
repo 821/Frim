@@ -57,7 +57,7 @@ menu:
 speller:
   alphabet: ',.zyxwvutsrqponmlkjihgfedcba'
   initials: 'zyxwvutsrqponmlkjihgfedcba' # 定義僅作始碼之鍵
-#  finals: ',.' # 定義僅作末碼之鍵
+  finals: ',.' # 定義僅作末碼之鍵
   delimiter: " '" # 上屛時的音節間分音符
   algebra: # 拼寫運算規則，將匯入prism中
 # 將全拼轉化爲雙拼
@@ -240,9 +240,9 @@ punctuator:
     '<' : [ 《, 〈, «, ‹ ]
     '>' : [ 》, 〉, », › ]
     '?' : { commit: ／ }
-    '/' : { commit: ？ }
+    '/' : { commit: ？ } # 打問號不用上檔鍵
     ";" : { commit: ： }
-    ":" : { commit: ； }
+    ":" : { commit: ； } # 打冒號不用上檔鍵
     '''' : { pair: [ '‘', '’' ] }
     '"' : { pair: [ '“', '”' ] }
     '\' : { commit: 、 }
