@@ -1,0 +1,33 @@
+# Rime dictionary
+# encoding: utf-8
+---
+name: frim
+version: "151117"
+sort: by_weight
+use_preset_vocabulary: true
+import_tables:
+  - frim.code # 字
+  - frim.geo # 地理
+  - frim.hdc # 漢語大詞典
+  - frim.names # 人名書名
+  - frim.tsi # 子學詞庫
+  - frim.usr # 用戶詞
+#  - frim.eng
+#encoder:
+#  exclude_patterns:
+#    - '^z.*$'
+#  rules:
+#    - length_equal: 2 #對於二字詞
+#      formula: "AaAzBaBbBz" #取第一字首尾碼、第二字首次尾碼
+#    - length_in_equal: 3 #對於三字詞
+#      formula: "AaAzBaYzZz" #取第一字首尾碼、第二字首尾碼、第三字尾碼
+#    - length_in_range: [4, 5] #對於四至五字詞
+#      formula: "AaBzCaYzZz" #取第一字首碼，第二字尾碼、第三字首碼、倒數第二字尾碼、最後一字尾碼
+#  tail_anchor: "'"
+#columns:
+#  - text #第一列字／詞
+#  - code #第二列碼
+#  - weight #第三列字／詞頻
+#  - stem #第四列造詞碼
+
+...
