@@ -1,0 +1,423 @@
+# encoding: utf-8
+schema:
+  schema_id: frim
+  name: "搖擺碼"
+  version: "151117"
+  author:
+    - "存中"
+  description: 
+    小鶴-聲調-四角
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, 英文 ]
+    reset: 0
+  - name: extended_charset
+    states: [ 快捷, 全面 ]
+    reset: 0
+  - name: simplification
+    states: [ 繁體, 簡化字 ]
+    reset: 0
+
+engine:
+  processors: # 按鍵消息
+    - ascii_composer # 西文模式及中西文切換
+    - recognizer # 與matcher搭配，處理符合特定規則的輸入碼，如網址、反查等tags
+    - key_binder # 在特定條件下將按鍵綁到其他按鍵，如自定義繁簡切換
+    - speller # 拼寫處理器，接受字符按鍵，編輯輸入碼，默認a-z
+    - punctuator # 句讀處理器，將單鍵映射爲符號或文字
+    - selector # 選字處理器，處理選字鍵、上、下候選定位、換頁
+#    - navigator # 處理輸入欄內的光標移動
+    - express_editor # 處理空格、回車上屏、回退鍵
+#    - fluency_editor # 句式編輯器，用於空格斷詞、回車上屏的方案，替代express_editor
+#    - chord_composer  # 並擊按鍵處理
+  segmentors: # 識別不同內容類型，將輸入碼分段
+    - ascii_segmentor # 標識西文段落〔譬如在西文模式下〕字母直接上屛
+    - matcher # 配合recognizer標識符合特定規則的段落，如網址、反查等，加上特定tag
+    - abc_segmentor # 標識常規的文字段落，加上abc這個tag
+    - punct_segmentor # 標識句讀段落〔鍵入標點符號用〕加上punct這個tag
+    - fallback_segmentor # 標識其他未標識段落
+    - affix_segmentor@reverse_lookup # 用戶自定義tag。可加載多個實例，後接@+tag名
+  translators: # 翻譯特定類型的編碼段爲一組候選文字
+#    -echo_translator # 沒有其他候選字時，回顯輸入碼〔輸入碼Shift+Enter上屛〕
+    - punct_translator # 配合punct_segmentor轉換標點符號
+    - table_translator # 碼表翻譯器，形碼必備。可加載多實例，後接@+翻譯器名
+    - script_translator # 腳本翻譯器，音碼必備。可加載多實例，後接@+翻譯器名
+#    - reverse_lookup_translator # 反查翻譯器，舊版
+  filters: # 過濾翻譯結果
+    - simplifier@simp # 用字轉換
+    - uniquifier # 過濾重複候選字，可能來自simplifier
+    - reverse_lookup_filter@middle_chinese_lookup
+    - reverse_lookup_filter@4corner_lookup # 新版反查濾鏡，可加載多實例，後接@+濾鏡名
+
+menu:
+  page_size: 7
+  alternative_select_keys: "1234789" # 選字鍵
+
+speller:
+  alphabet: ',.zyxwvutsrqponmlkjihgfedcba'
+  initials: 'zyxwvutsrqponmlkjihgfedcba' # 定義僅作始碼之鍵
+#  finals: ',.' # 定義僅作末碼之鍵
+  delimiter: " '" # 上屛時的音節間分音符
+  algebra: # 拼寫運算規則，將匯入prism中
+# 將全拼轉化爲雙拼
+    - xform/^([aoe])(\d)/$1$1$2/
+    - xform/iu(\d)/Q$1/
+    - xform/(.)ei(\d)/$1W$2/
+    - xform/uan(\d)/R$1/
+    - xform/[uv]e(\d)/T$1/
+    - xform/un(\d)/Y$1/
+    - xform/^sh/U/
+    - xform/^ch/I/
+    - xform/^zh/V/
+    - xform/uo(\d)/O$1/
+    - xform/ie(\d)/P$1/
+    - xform/i?ong(\d)/S$1/
+    - xform/ing(\d)/K$1/
+    - xform/uai(\d)/K$1/
+    - xform/(.)ai(\d)/$1D$2/
+    - xform/(.)en(\d)/$1F$2/
+    - xform/(.)eng(\d)/$1G$2/
+    - xform/^eng(\d)/EG$1/
+    - xform/[iu]ang(\d)/L$1/
+    - xform/(.)ang(\d)/$1H$2/
+    - xform/^ang(\d)/AH$1/
+    - xform/ian(\d)/M$1/
+    - xform/(.)an(\d)/$1J$2/
+    - xform/(.)ou(\d)/$1Z$2/
+    - xform/[iu]a(\d)/X$1/
+    - xform/iao(\d)/N$1/
+    - xform/(.)ao(\d)/$1C$2/
+    - xform/ui(\d)/V$1/
+    - xform/in(\d)/B$1/
+# 處理聲調與四角號碼之關係
+    - xform/1;(1)/>;$1/
+    - xform/1;(2)/X;$1/
+    - xform/1;(3)/C;$1/
+    - xform/1;(4)/V;$1/
+    - xform/1;(5)/V;$1/
+    - xform/1;(6)/M;$1/
+    - xform/1;(7)/M;$1/
+    - xform/1;(8)/<;$1/
+    - xform/1;(9)/<;$1/
+    - xform/1;(0)/C;$1/
+    - xform/2;(1)/O;$1/
+    - xform/2;(2)/W;$1/
+    - xform/2;(3)/E;$1/
+    - xform/2;(4)/R;$1/
+    - xform/2;(5)/R;$1/
+    - xform/2;(6)/U;$1/
+    - xform/2;(7)/U;$1/
+    - xform/2;(8)/I;$1/
+    - xform/2;(9)/I;$1/
+    - xform/2;(0)/E;$1/
+    - xform/3;(1)/B;$1/
+    - xform/3;(2)/N;$1/
+    - xform/3;(3)/T;$1/
+    - xform/3;(4)/G;$1/
+    - xform/3;(5)/G;$1/
+    - xform/3;(6)/H;$1/
+    - xform/3;(7)/H;$1/
+    - xform/3;(8)/Y;$1/
+    - xform/3;(9)/Y;$1/
+    - xform/3;(0)/T;$1/
+    - xform/4;(1)/L;$1/
+    - xform/4;(2)/S;$1/
+    - xform/4;(3)/D;$1/
+    - xform/4;(4)/F;$1/
+    - xform/4;(5)/F;$1/
+    - xform/4;(6)/J;$1/
+    - xform/4;(7)/J;$1/
+    - xform/4;(8)/K;$1/
+    - xform/4;(9)/K;$1/
+    - xform/4;(0)/D;$1/
+    - xform/5;(1)/L;$1/
+    - xform/5;(2)/S;$1/
+    - xform/5;(3)/D;$1/
+    - xform/5;(4)/F;$1/
+    - xform/5;(5)/F;$1/
+    - xform/5;(6)/J;$1/
+    - xform/5;(7)/J;$1/
+    - xform/5;(8)/K;$1/
+    - xform/5;(9)/K;$1/
+    - xform/5;(0)/D;$1/
+# 配置配置四角號碼鍵位
+    - xlit/1234567890/RSDFGHJKLU/
+# 最終成碼
+    - derive/^(\w+);(\w+)$/o$2/ # 純四角
+    - abbrev/^(\w\w\w);(\w+)$/$1/ # 鶴調形
+    - xform/^(\w\w)(\w);(\w+)$/$1/ # 純雙拼
+    - erase/^(.*);(.*)$/
+    - xlit/QWERTYUIOPASDFGHJKLZXCVBNM/qwertyuiopasdfghjklzxcvbnm/
+    - xlit/<>/,./
+# 英語部分
+    - erase/^:/
+#  max_code_length: # 形碼最大碼長，超過則頂字上屛〔number〕
+#  auto_select: # 自動上屛〔true false〕
+#  use_space: # 以空格作輸入碼〔true false〕
+
+#xform --改寫〔不保留原形〕
+#derive --衍生〔保留原形〕
+#abbrev --簡拼〔出字優先級較上兩組更低〕
+#fuzz --畧拼〔此種簡拼僅組詞，不出單字〕
+#xlit --變換〔適合大量一對一變換〕
+#erase --刪除
+
+custom_phrase:
+  dictionary: ""
+  user_dict: custom_phrase
+  db_class: stabledb
+  enable_completion: true
+  enable_sentence: false
+  initial_quality: 1
+
+key_binder:
+  bindings:
+    - { when: always, accept: Control+e, toggle: simplification }
+    - {accept: minus, send: Page_Up, when: has_menu}
+    - {accept: equal, send: Page_Down, when: has_menu}
+
+recognizer: # 識別 email address 之類
+  import_preset: default
+  patterns:
+    reverse_lookup: "(?<![A-Z]):[a-z']*;?$"
+
+translator:
+  dictionary: frim
+  db_class: stabledb # stabledb 固定詞頻, tabledb 動態詞頻
+  enable_charset_filter: true # 是否開啓字符集過濾〔僅table_translator有效〕
+  enable_encoder: false # 是否開啓自動造詞〔僅table_translator〕
+#  encode_commit_history: false # 是否對已上屛詞自動成詞〔僅table_translator〕
+#  max_phrase_length: 1 # 最大自動成詞詞長〔僅table_translator〕
+  enable_completion: true # 提前顯示尚未輸入完整碼的字〔僅table_translator〕
+  sentence_over_completion: false # 無全碼對應字僅逐鍵提示也智能組句〔table_translator〕
+#  strict_spelling: false # 配合speller中的fuzz規則，僅以畧拼碼組詞〔僅table_translator〕
+#  disable_user_dict_for_patterns: false # 禁止某些編碼錄入用戶詞典
+  enable_sentence: false # 是否開啓自動造句——會顯示爲陰陽魚。
+  enable_user_dict: false # 是否開啓用戶詞典〔用戶詞典記錄動態字詞頻、用戶詞〕
+#  user_dict:  # 設定用戶詞典名
+#  preedit_format: # 上屛碼自定義
+#  comment_format: # 提示碼自定義
+  spelling_hints: 10 # 設定多少字以內候選標註完整帶調拼音〔僅script_translator有效〕
+#  initial_quality: # 設定此翻譯器出字優先級 tag: 設定此翻譯器針對的tag。不塡則僅針對abc
+#  prefix: # 設定此翻譯器的前綴標識，可不塡，不塡則無前綴
+#  suffix: # 設定此翻譯器的尾綴標識，可不塡，不塡則無尾綴
+#  tips: # 設定此翻譯器的輸入前提示符，可不塡，不塡則無提示符
+#  closing_tips: # 設定此翻譯器的結束輸入提示符，可不塡，不塡則無提示符
+#reverse_lookup:
+#  dictionary: frim.code
+#  prefix: "`"
+
+punctuator:
+  full_shape:
+    ' ' : { commit: '　' }
+    ',' : { commit: ， }
+    '.' : { commit: 。 }
+    '<' : [ 《, 〈, «, ‹ ]
+    '>' : [ 》, 〉, », › ]
+    '/' : [ ／, ÷ ]
+    '?' : { commit: ？ }
+    ";" : { commit: ： }
+    ':' : { commit: ； }
+    '''' : { pair: [ '‘', '’' ] }
+    '"' : { pair: [ '“', '”' ] }
+    '\' : { commit: 、 }
+    '|' : [ ·, ｜, '§', '¦' ]
+    '!' : { commit: ！ }
+    '$' : [ ￥, '$', '€', '£', ❂, ☯, ☭]
+    '&' : { commit: …… }
+    '*' : [ '*', ×, ɖ, ɳ, ʂ, ʐ, ɑ, ɱ, ʔ, ħ]
+    '(' : （
+    ')' : ）
+    '_' : ——
+    '[' : [ 「, ⿰, ⿱, ⿲, ⿳, ⿴, ⿵, ⿶, ⿷, ⿸, ⿹, ⿺, ⿻, 〾]
+    ']' : [ 」, 】, 〕, ］, 〛,〙 ]
+    '{' : [ 『, 〖, ｛ ]
+    '}' : [ 』, 〗, ｝ ]
+  half_shape:
+    ',' : { commit: ， }
+    '.' : { commit: 。 }
+    '<' : [ 《, 〈, «, ‹ ]
+    '>' : [ 》, 〉, », › ]
+    '?' : { commit: ／ }
+    '/' : { commit: ？ }
+    ";" : { commit: ： }
+    ":" : { commit: ； }
+    '''' : { pair: [ '‘', '’' ] }
+    '"' : { pair: [ '“', '”' ] }
+    '\' : { commit: 、 }
+    '|' : [ ·, ｜, '§', '¦' ]
+    '!' : { commit: ！ }
+    '$' : [ ￥, '$', '€', '£', ❂, ☯, ☭]
+    '&' : { commit: …… }
+    '*' : [ ×, ·, ・, ÷, ɖ, ɳ, ʂ, ʐ, ɑ, ɱ, ʔ, '*']
+    '(' : （
+    ')' : ）
+    '_' : ——
+    '[' : [ 「, ⿰, ⿱, ⿲, ⿳, ⿴, ⿵, ⿶, ⿷, ⿸, ⿹, ⿺, ⿻, 〾]
+    ']' : [ 」, 】, 〕, ］, 〛,〙 ]
+    '{' : [ 『, 〖, ｛ ]
+    '}' : [ 』, 〗, ｝ ]
+
+# 音韻反查
+zyenpheng:
+  # table_translator@zyenpheng
+  dictionary: zyenpheng
+reverse_lookup:
+  tag: reverse_lookup
+middle_chinese_lookup:
+  dictionary: zyenpheng
+  overwrite_comment: true # 覆蓋其他提示
+  comment_format:
+# 標記頭尾
+    - "xform/ /\x03 \x01/"
+    - "xform/$/\x03/"
+    - "xform/^/\x01/"
+# 預處理
+    - "xform/ng/ŋ/"
+    - "xform/k\x03/ŋq\x03/"
+    - "xform/t\x03/nq\x03/"
+    - "xform/p\x03/mq\x03/"
+    - "xform/(\x01(?:th?|ch?|zs?|[dns]))r(?=[^iy'])/$1r'r/"
+    - "xform/(\x01(?:ph?|kh?|gh?|[bmhqjiy]|ŋ)[iy])eŋ/$1æŋ/"
+    - "xform/j(?![iy'])/ji/"
+    - "xform/(\x01(?:ch?|zs?|[sn])?[jl])(?=([iy]e([umn]|ŋ)?|i[imn]|yn)[dxhq]?)/$1'j/"
+    - "xform/(\x01(?:ch?|zs?|s))(?=(?:[iy]e(?:[umn]|ŋ)?|i[imn]|yn)[dxhq]?)/$1'j/"
+    - "xform/(\x01(?:ch?|zs?|s)rj?i)n/$1ɿn/"
+    - "xform/(\x01)(?!ph?|kh?|gh?|ŋ|[bmhqjiy])([^aeiouy]*y)n([xhq]?\x03)/$1$2ɿn$3/"
+    - "xform/(\x01)([^aeiouy]*jy)n([xhq]?\x03)/$1$2ɿn$3/"
+    - "xform/(\x01)(?!kh?|g|ŋ)([^aeioux]*)ia([xhq]?\x03)/$1$2'ria$3/"
+# 合併不同聲調
+    - "xform/([^xhdq])\x03/$1w\x03/"
+    - xform/(\x01[^\x01\x03]+)([whxq])\x03((?:\s\x01[^\x01\x03]+\x03)*)\s\1([whxq])\x03((?:\s\x01[^\x01\x03]+\x03)*)\s\1([whxq]\x03)/$1$2$4$6$3$5/
+    - xform/(\x01[^\x01\x03]+)([whxq])\x03((?:\s\x01[^\x01\x03]+\x03)*)\s\1([whxq]\x03)/$1$2$4$3/
+# 轉化聲母
+    - "xform/\x01ph(?=y(o[in]?|a[mnd]|[au]ŋ)|iu(ŋ)?)/N\x01L敷\x02/"
+    - "xform/\x01p(?=y(o[in]?|a[mnd]|[au]ŋ)|iu(ŋ)?)/N\x01L非\x02/"
+    - "xform/\x01b(?=y(o[in]?|a[mnd]|[au]ŋ)|iu(ŋ)?)/P\x01L奉\x02/"
+    - "xform/\x01m(?=y(o[in]?|a[mnd]|[au]ŋ))/P\x01L微\x02/"
+    - "xform/\x01ph/N\x01L滂\x02/"
+    - "xform/\x01p/N\x01L幫\x02/"
+    - "xform/\x01b/P\x01L並\x02/"
+    - "xform/\x01m/P\x01L明\x02/"
+    - "xform/\x01thr/N\x01徹\x02/"
+    - "xform/\x01tr/N\x01知\x02/"
+    - "xform/\x01dr/P\x01澄\x02/"
+    - "xform/\x01nr/P\x01孃\x02/"
+    - "xform/\x01nj/P\x01日\x02/"
+    - "xform/\x01th/N\x01透\x02/"
+    - "xform/\x01t/N\x01端\x02/"
+    - "xform/\x01d/P\x01定\x02/"
+    - "xform/\x01n/P\x01泥\x02/"
+    - "xform/\x01chr/N\x01初\x02/"
+    - "xform/\x01cr/N\x01莊\x02/"
+    - "xform/\x01zsr/P\x01俟\x02/"
+    - "xform/\x01zr/P\x01崇\x02/"
+    - "xform/\x01sr/N\x01生\x02/"
+    - "xform/\x01ch(j)/N\x01昌\x02/"
+    - "xform/\x01c(j)/N\x01章\x02/"
+    - "xform/\x01zs(j)/P\x01船\x02/"
+    - "xform/\x01z(j)/P\x01常\x02/"
+    - "xform/\x01s(j)/N\x01書\x02/"
+    - "xform/\x01ch/N\x01清\x02/"
+    - "xform/\x01c/N\x01精\x02/"
+    - "xform/\x01zs/P\x01邪\x02/"
+    - "xform/\x01z/P\x01從\x02/"
+    - "xform/\x01s/N\x01心\x02/"
+    - "xform/\x01kh/N\x01谿\x02/"
+    - "xform/\x01k/N\x01見\x02/"
+    - "xform/\x01gh/P\x01匣\x02/"
+    - "xform/\x01g/P\x01羣\x02/"
+    - "xform/\x01ŋ/P\x01疑\x02/"
+    - "xform/\x01h/N\x01曉\x02/"
+    - "xform/\x01q/N\x01影\x02/"
+    - "xform/\x01([iy])/P\x01云\x02$1/"
+    - "xform/\x01j/P\x01以\x02/"
+    - "xform/\x01l/P\x01來\x02/"
+    - "xform/'//"
+# 合併不同聲母
+    - xform/([NP])\x01(L?)([^\x00-\x7f]{3})\x02([^\x01\x02\x03wxhq]+)([wxhq]+)\x03\s((?:[NP]\x01[^\x01\x03]+\x03\s)*)([NP])\x01\2([^\x00-\x7f]{3})\x02\4([wxhq]+\x03)/$1$7\x01$2$3／$8\x02$4$5／$9 $6/
+# 轉化韻母
+    - "xform/\x02(i?)uŋ((?:[wxhq]|／)*\x03)/\x02$1東$2/"
+    - "xform/\x02(y)uŋ((?:[wxhq]|／)*\x03)/\x02$1鐘$2/"
+    - "xform/\x02(u)uŋ((?:[wxhq]|／)*\x03)/\x02$1冬$2/"
+    - "xform/\x02(r)uŋ((?:[wxhq]|／)*\x03)/\x02$1江$2/"
+    - "xform/\x02([iy])aŋ((?:[wxhq]|／)*\x03)/\x02$1o陽$2/"
+    - "xform/\x02(u?)aŋ((?:[wxhq]|／)*\x03)/\x02$1o唐$2/"
+    - "xform/\x02(ru?)aŋ((?:[wxhq]|／)*\x03)/\x02$1o庚$2/"
+    - "xform/\x02([iy])æŋ((?:[wxhq]|／)*\x03)/\x02ɨ$1o庚$2/"
+    - "xform/\x02(ru?)eŋ((?:[wxhq]|／)*\x03)/\x02$1o耕$2/"
+    - "xform/\x02j?([iy])eŋ((?:[wxhq]|／)*\x03)/\x02jɨ$1o清$2/"
+    - "xform/\x02(u?e)ŋ((?:[wxhq]|／)*\x03)/\x02$1o青$2/"
+    - "xform/\x02([iy])ŋ((?:[wxhq]|／)*\x03)/\x02$1o蒸$2/"
+    - "xform/\x02(u?)oŋ((?:[wxhq]|／)*\x03)/\x02$1o登$2/"
+    - "xform/\x02(j?)(y)ɿn((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o諄$3/"
+    - "xform/\x02(j?)(i)ɿn((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o臻$3/"
+    - "xform/\x02(j?)([iy])n((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o眞$3/"
+    - "xform/\x02(i)on((?:[wxhq]|／)*\x03)/\x02$1o欣$2/"
+    - "xform/\x02(u)on((?:[wxhq]|／)*\x03)/\x02$1o魂$2/"
+    - "xform/\x02on((?:[wxhq]|／)*\x03)/\x02o痕$1/"
+    - "xform/\x02(y)on((?:[wxhq]|／)*\x03)/\x02$1o文$2/"
+    - "xform/\x02(u)an((?:[wxhq]|／)*\x03)/\x02$1o桓$2/"
+    - "xform/\x02([iy])an((?:[wxhq]|／)*\x03)/\x02$1o元$2/"
+    - "xform/\x02(ru?)an((?:[wxhq]|／)*\x03)/\x02$1o刪$2/"
+    - "xform/\x02an((?:[wxhq]|／)*\x03)/\x02o寒$1/"
+    - "xform/\x02(ru?)en((?:[wxhq]|／)*\x03)/\x02$1o山$2/"
+    - "xform/\x02(j?)([iy])en((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o仙$3/"
+    - "xform/\x02(u?e)n((?:[wxhq]|／)*\x03)/\x02$1o先$2/"
+    - "xform/\x02(j?)(i)m((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o侵$3/"
+    - "xform/\x02(i)am((?:[wxhq]|／)*\x03)/\x02$1o嚴$2/"
+    - "xform/\x02(y)am((?:[wxhq]|／)*\x03)/\x02$1o凡$2/"
+    - "xform/\x02(r)am((?:[wxhq]|／)*\x03)/\x02$1o銜$2/"
+    - "xform/\x02(r)em((?:[wxhq]|／)*\x03)/\x02$1o咸$2/"
+    - "xform/\x02am((?:[wxhq]|／)*\x03)/\x02o談$1/"
+    - "xform/\x02(j?)(i)em((?:[wxhq]|／)*\x03)/\x02$1ɨ$2o鹽$3/"
+    - "xform/\x02(e)m((?:[wxhq]|／)*\x03)/\x02$1o添$2/"
+    - "xform/\x02om((?:[wxhq]|／)*\x03)/\x02o覃$1/"
+    - "xform/\x02(r)au((?:[wxh]|／)*\x03)/\x02$1肴$2/"
+    - "xform/\x02au((?:[wxh]|／)*\x03)/\x02豪$1/"
+    - "xform/\x02(j?)(i)eu((?:[wxh]|／)*\x03)/\x02$1ɨ$2宵$3/"
+    - "xform/\x02(e)u((?:[wxh]|／)*\x03)/\x02$1蕭$2/"
+    - "xform/\x02(i)u((?:[wxh]|／)*\x03)/\x02$1尤$2/"
+    - "xform/\x02u((?:[wxh]|／)*\x03)/\x02侯$1/"
+    - "xform/\x02(y)((?:[wxh]|／)*\x03)/\x02$1幽$2/"
+    - "xform/\x02(j?)([iy])e((?:[wxh]|／)*\x03)/\x02$1ɨ$2o支$3/"
+    - "xform/\x02(j?)([iy])i((?:[wxh]|／)*\x03)/\x02$1ɨ$2o脂$3/"
+    - "xform/\x02i((?:[wxh]|／)*\x03)/\x02o之$1/"
+    - "xform/\x02([iy])oi((?:[wxh]|／)*\x03)/\x02$1o微$2/"
+    - "xform/\x02([iy])a(d\x03)/\x02$1o廢$2/"
+    - "xform/\x02(ru?)a(d\x03)/\x02$1o夬$2/"
+    - "xform/\x02(u?)a(d\x03)/\x02$1o泰$2/"
+    - "xform/\x02(j?)([iy])e(d\x03)/\x02$1ɨ$2o祭$3/"
+    - "xform/\x02(ru?)e((?:[wxh]|／)*\x03)/\x02$1o佳$2/"
+    - "xform/\x02(ru?)ai((?:[wxh]|／)*\x03)/\x02$1o皆$2/"
+    - "xform/\x02(u?e)((?:[wxh]|／)*\x03)/\x02$1o齊$2/"
+    - "xform/\x02i?(u)ai((?:[wxh]|／)*\x03)/\x02$1o灰$2/"
+    - "xform/\x02ai((?:[wxh]|／)*\x03)/\x02o咍$1/"
+    - "xform/\x02([uiy])a((?:[wxh]|／)*\x03)/\x02$1o戈$2/"
+    - "xform/\x02a((?:[wxh]|／)*\x03)/\x02o歌$1/"
+    - "xform/\x02j?(r[ui]?)a((?:[wxh]|／)*\x03)/\x02$1o麻$2/"
+    - "xform/\x02(i)o((?:[wxh]|／)*\x03)/\x02$1魚$2/"
+    - "xform/\x02(y)o((?:[wxh]|／)*\x03)/\x02$1虞$2/"
+    - "xform/\x02o((?:[wxh]|／)*\x03)/\x02模$1/"
+# 調整陰陽調標識
+    - "xform/([NP])([NP])?(\x01[^\x01\x03wdxhq]+)([whxqd]+)(?:(／)([whxqd]+))?\x03/$3$1$4$5$2$6/"
+    - xform/\x02([^\x01\x02\x03NPwxhq]+)([NPwxhq]+)／\2/\x02$1$2/
+# 轉寫等
+    - "xform/\x01(L?)((?:[^\x00-\x7f]{3}|／)+)\x02(j?ɨ)([iy])(o?)([^\x00-\x7f]{3})/$2重紐$3等\x01$1$5$4\x03$6/"
+    - "xform/\x01(L?)((?:[^\x00-\x7f]{3}|／)+)\x02(u?)e(o?)([^\x00-\x7f]{3})/$2四等\x01$1$4$3\x03$5/"
+    - "xform/\x01(L?)((?:[^\x00-\x7f]{3}|／)+)\x02r(u?)(o?)([^\x00-\x7f]{3})/$2二等\x01$1$4$3\x03$5/"
+    - "xform/\x01(L?)((?:[^\x00-\x7f]{3}|／)+)\x02r?([iy])(o?)([^\x00-\x7f]{3})/$2三等\x01$1$4$3\x03$5/"
+    - "xform/\x01(L?)((?:[^\x00-\x7f]{3}|／)+)\x02(u?)(o?)([^\x00-\x7f]{3})/$2一等\x01$1$4$3\x03$5/"
+    - "xform/jɨ/四/"
+    - "xform/ɨ/三/"
+    - "xform/\x01(?!L)o[uy]\x03/合/"
+    - "xform/\x01(?!L)oi?\x03/開/"
+    - "xform/\x01L?[a-z]*\x03//"
+# 轉寫聲調
+    - "xform/N//"
+    - "xform/P//"
+    - "xform/([xhq]+)w/w$1/"
+    - "xform/(w?)([hq]+)x/$1x$2/"
+    - "xform/qh/hq/"
+    - "xlit|wxhdq|平上去去入|"
